@@ -362,9 +362,7 @@ class BeaverConfig():
                         if raise_exceptions:
                             raise Exception('Wrong number of values for add_field')
                     else:
-                        fieldkeys = fields[0::2]
-                        fieldvalues = [[x] for x in fields[1::2]]
-                        config['fields'] = dict(zip(fieldkeys, fieldvalues))
+                        config['fields'] = dict(zip(fields[0::2], fields[1::2]))
                 except TypeError:
                     config['fields'] = {}
 
