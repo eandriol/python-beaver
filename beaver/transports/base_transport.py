@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import datetime
+import collections
 
 # priority: ujson > simplejson > jsonlib2 > json
 priority = ['ujson', 'simplejson', 'jsonlib2', 'json']
 for mod in priority:
     try:
         json = __import__(mod)
+        json.encoder.c_make_encoder = None
     except ImportError:
         pass
     else:
@@ -52,6 +54,20 @@ class BaseTransport(object):
                 'raw_json_fields': ['message', 'host', 'file', 'tags', '@timestamp', 'type'],
             }
 
+        def json_formatter(data):
+            unsorted_data = data
+            data = collections.OrderedDict()
+
+            for field in ['@timestamp', 'message', 'type', 'host', 'file', 'tags']:
+                if field in unsorted_data:
+                    data[field] = unsorted_data[field]
+                    del unsorted_data[field]
+
+            for field in sorted(unsorted_data):
+                data[field] = unsorted_data[field]
+
+            return json.dumps(data)
+
         def raw_formatter(data):
             return data[self._fields.get('message')]
 
@@ -76,7 +92,7 @@ class BaseTransport(object):
         def string_formatter(data):
             return '[{0}] [{1}] {2}'.format(data[self._fields.get('host')], data['@timestamp'], data[self._fields.get('message')])
 
-        self._formatters['json'] = json.dumps
+        self._formatters['json'] = json_formatter
         self._formatters['msgpack'] = msgpack.packb
         self._formatters['raw'] = raw_formatter
         self._formatters['rawjson'] = rawjson_formatter
